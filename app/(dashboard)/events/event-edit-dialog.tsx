@@ -54,7 +54,7 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
   const [contacts, setContacts] = useState<Contact[]>([])
   const [contactLoading, setContactLoading] = useState(false)
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([])
-  const [trainings, setTrainings] = useState<{ id: string; name: string; code: string }[]>([])
+  const [trainings, setTrainings] = useState<{ id: string; name: string }[]>([])
   const [cities, setCities] = useState<{ id: string; name: string }[]>([])
   // State lokal (bukan form.watch) agar tidak memicu react-hooks/incompatible-library.
   const [selectedCustomerId, setSelectedCustomerId] = useState("")
@@ -103,7 +103,7 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
     setDeliveryMode(event.delivery_mode ?? null)
     Promise.all([
       supabase.from("customers").select("id, name").is("deleted_at", null).order("name"),
-      supabase.from("trainings").select("id, name, code").is("deleted_at", null).order("name"),
+      supabase.from("trainings").select("id, name").is("deleted_at", null).order("name"),
       supabase.from("cities").select("id, name").is("deleted_at", null).order("name"),
     ]).then(([c, t, ct]) => {
       setCustomers(c.data ?? [])
@@ -169,12 +169,12 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
           </Button>
         }
       />
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Ubah Event</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex max-h-[70vh] flex-col gap-4 overflow-x-hidden overflow-y-auto pr-1">
             <p className="text-muted-foreground text-sm">
               Mengubah detail event <span className="font-medium text-foreground">{event.event_name || "(tanpa nama)"}</span>. Perubahan langsung tersimpan tanpa mengubah status.
             </p>
@@ -213,49 +213,37 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 [&>*]:min-w-0">
               <FormField
                 control={form.control}
                 name="contact_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kontak PIC</FormLabel>
-                    <Select
-                      value={contactLoading || !contacts.some((c) => c.id === field.value) ? "" : (field.value ?? "")}
-                      onValueChange={field.onChange}
-                      disabled={!customerId || contactLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={
-                              contactLoading
-                                ? "Memuat kontak..."
-                                : customerId
-                                  ? "Pilih kontak..."
-                                  : "Pilih customer dulu"
-                            }
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {contactLoading ? (
-                          <SelectItem value="__loading__" disabled>
-                            Memuat kontak...
-                          </SelectItem>
-                        ) : contacts.length === 0 ? (
-                          <SelectItem value="__empty__" disabled>
-                            Belum ada kontak (PIC utama belum di-set)
-                          </SelectItem>
-                        ) : (
-                          contacts.map((c) => (
-                            <SelectItem key={c.id} value={c.id} label={c.full_name}>
-                              {c.full_name} {c.phone ? `(${c.phone})` : ""}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <CustomerSearchSelect
+                        value={field.value}
+                        onChange={(id) => field.onChange(id || undefined)}
+                        options={contacts.map((c) => ({
+                          id: c.id,
+                          label: c.phone ? `${c.full_name} (${c.phone})` : c.full_name,
+                        }))}
+                        placeholder={
+                          contactLoading
+                            ? "Memuat kontak..."
+                            : customerId
+                              ? "Cari atau pilih kontak..."
+                              : "Pilih customer dulu"
+                        }
+                        searchPlaceholder="Ketik nama kontak..."
+                        emptyText={
+                          customerId
+                            ? "Belum ada kontak (PIC utama belum di-set)."
+                            : "Pilih customer dulu untuk memuat kontak."
+                        }
+                        disabled={!customerId || contactLoading}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -266,39 +254,33 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Program Pelatihan</FormLabel>
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih program" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {trainings.length === 0 ? (
-                          <SelectItem value="__empty__" disabled>
-                            Memuat...
-                          </SelectItem>
-                        ) : (
-                          trainings.map((t) => (
-                            <SelectItem key={t.id} value={t.id} label={`${t.code} — ${t.name}`}>
-                              {t.code} — {t.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <CustomerSearchSelect
+                        value={field.value}
+                        onChange={(id) => field.onChange(id || undefined)}
+                        options={trainings.map((t) => ({ id: t.id, label: t.name }))}
+                        placeholder="Cari atau pilih program..."
+                        searchPlaceholder="Ketik nama program..."
+                        emptyText="Belum ada program. Tambah di menu Master Data."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 [&>*]:min-w-0">
               <FormField
                 control={form.control}
                 name="event_type"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipe Event</FormLabel>
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      items={EVENT_TYPES.map((v) => ({ value: v, label: EVENT_TYPE_LABELS[v] }))}
+                    >
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Pilih tipe" />
@@ -331,6 +313,11 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
                           form.setValue("location_type", "ONLINE")
                         }
                       }}
+                      items={([
+                        { value: "OFFLINE", label: DELIVERY_MODE_LABELS.OFFLINE },
+                        { value: "ONLINE", label: DELIVERY_MODE_LABELS.ONLINE },
+                        { value: "HYBRID", label: DELIVERY_MODE_LABELS.HYBRID },
+                      ])}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -351,7 +338,7 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 [&>*]:min-w-0">
               <FormField
                 control={form.control}
                 name="start_date"
@@ -406,7 +393,7 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 [&>*]:min-w-0">
               <FormField
                 control={form.control}
                 name="location_type"
@@ -416,6 +403,13 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
                     <Select
                       value={deliveryMode === "ONLINE" && !field.value ? "ONLINE" : (field.value ?? "")}
                       onValueChange={field.onChange}
+                      items={([
+                        { value: "CLIENT_SITE", label: LOCATION_TYPE_LABELS.CLIENT_SITE },
+                        { value: "HOTEL", label: LOCATION_TYPE_LABELS.HOTEL },
+                        { value: "OFFICE", label: LOCATION_TYPE_LABELS.OFFICE },
+                        { value: "ONLINE", label: LOCATION_TYPE_LABELS.ONLINE },
+                        { value: "OTHER", label: LOCATION_TYPE_LABELS.OTHER },
+                      ])}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -440,26 +434,16 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kota</FormLabel>
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Pilih kota" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cities.length === 0 ? (
-                          <SelectItem value="__empty__" disabled>
-                            Memuat...
-                          </SelectItem>
-                        ) : (
-                          cities.map((c) => (
-                            <SelectItem key={c.id} value={c.id} label={c.name}>
-                              {c.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <CustomerSearchSelect
+                        value={field.value}
+                        onChange={(id) => field.onChange(id || undefined)}
+                        options={cities.map((c) => ({ id: c.id, label: c.name }))}
+                        placeholder="Cari atau pilih kota..."
+                        searchPlaceholder="Ketik nama kota..."
+                        emptyText="Belum ada kota. Tambah di menu Master Data."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -503,10 +487,18 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
                     <FormLabel>Nilai Jual (Rp)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Rp0"
+                        value={
+                          field.value == null
+                            ? ""
+                            : `Rp${Number(field.value).toLocaleString("id-ID")}`
+                        }
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "")
+                          field.onChange(digits ? Number(digits) : undefined)
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -515,14 +507,23 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 [&>*]:min-w-0">
               <FormField
                 control={form.control}
                 name="po_status"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status PO</FormLabel>
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      items={[
+                        { value: "NO_PO", label: "Tanpa PO" },
+                        { value: "PO_PENDING", label: "PO dalam Proses" },
+                        { value: "PO_RECEIVED", label: "PO Diterima" },
+                        { value: "VERBAL_COMMITMENT", label: "Komitmen Verbal" },
+                      ]}
+                    >
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Pilih" />
@@ -558,7 +559,17 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Termin Pembayaran</FormLabel>
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      items={[
+                        { value: "DP", label: "Uang Muka (DP)" },
+                        { value: "FULL_BEFORE", label: "Bayar di Muka" },
+                        { value: "NET_14", label: "Net 14 Hari" },
+                        { value: "NET_30", label: "Net 30 Hari" },
+                        { value: "OTHER", label: "Lainnya" },
+                      ]}
+                    >
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Pilih" />
@@ -596,8 +607,15 @@ export function EventEditDialog({ event, disabled }: { event: EventEditRow; disa
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Prioritas</FormLabel>
-                  <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <FormLabel>Prioritas</FormLabel>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      items={(["LOW", "NORMAL", "HIGH", "URGENT"] as const).map((v) => ({
+                        value: v,
+                        label: PRIORITY_LABELS[v],
+                      }))}
+                    >
                     <FormControl>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Pilih prioritas" />

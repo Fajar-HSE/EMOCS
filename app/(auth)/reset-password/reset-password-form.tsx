@@ -2,40 +2,82 @@
 
 import { useActionState } from "react"
 import { updatePassword, type ActionState } from "@/actions/auth-actions"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const initialState: ActionState = null
 
 export function ResetPasswordForm() {
   const [state, formAction, pending] = useActionState(updatePassword, initialState)
 
+  const passwordError = state?.fieldErrors?.password?.[0]
+  const confirmError = state?.fieldErrors?.confirmPassword?.[0]
+
   return (
-    <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
-      {state?.message && (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      )}
-      <div className="grid gap-2">
-        <Label htmlFor="password">Password baru</Label>
-        <Input id="password" name="password" type="password" autoComplete="new-password" required />
-        {state?.fieldErrors?.password && (
-          <p className="text-destructive text-sm">{state.fieldErrors.password[0]}</p>
-        )}
+    <form action={formAction} className="login-form" noValidate>
+      {state?.message && <p className="auth-alert">{state.message}</p>}
+      <div className={`field${passwordError ? " has-error" : ""}`}>
+        <label htmlFor="password">Password baru</label>
+        <div className="input-wrap">
+          <svg
+            className="icon-leading"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.3" />
+            <path d="M7.5 10.5V7.8a4.5 4.5 0 0 1 9 0v2.7" />
+          </svg>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Minimal 6 karakter"
+            autoComplete="new-password"
+            required
+          />
+        </div>
+        <p className={`field-hint${passwordError ? " error" : ""}`}>{passwordError ?? ""}</p>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="confirmPassword">Konfirmasi password</Label>
-        <Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required />
-        {state?.fieldErrors?.confirmPassword && (
-          <p className="text-destructive text-sm">{state.fieldErrors.confirmPassword[0]}</p>
-        )}
+      <div className={`field${confirmError ? " has-error" : ""}`}>
+        <label htmlFor="confirmPassword">Konfirmasi password</label>
+        <div className="input-wrap">
+          <svg
+            className="icon-leading"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.3" />
+            <path d="M7.5 10.5V7.8a4.5 4.5 0 0 1 9 0v2.7" />
+          </svg>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            placeholder="Ulangi password baru"
+            autoComplete="new-password"
+            required
+          />
+        </div>
+        <p className={`field-hint${confirmError ? " error" : ""}`}>{confirmError ?? ""}</p>
       </div>
-      <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Menyimpan..." : "Simpan password baru"}
-      </Button>
+      <button
+        className={`btn btn-submit${pending ? " is-loading" : ""}`}
+        type="submit"
+        disabled={pending}
+      >
+        <span className="label">Simpan password baru</span>
+        <span className="spinner" aria-hidden="true">
+          <span className="ring" />
+        </span>
+      </button>
     </form>
   )
 }

@@ -37,7 +37,7 @@ export default async function EventDetailPage({
   const { data: event } = await supabase
     .from("events")
     .select(
-      "*, customers(name), trainings(name, code), cities(name), pic:profiles!events_pic_user_id_fkey(id, full_name), backup_pic:profiles!events_backup_pic_user_id_fkey(full_name), sales:profiles!events_sales_user_id_fkey(full_name), sales_team:teams!events_sales_team_id_fkey(name)"
+      "*, customers(name), trainings(name), cities(name), pic:profiles!events_pic_user_id_fkey(id, full_name), backup_pic:profiles!events_backup_pic_user_id_fkey(full_name), sales:profiles!events_sales_user_id_fkey(full_name), sales_team:teams!events_sales_team_id_fkey(name)"
     )
     .eq("id", id)
     .maybeSingle()
@@ -230,7 +230,7 @@ export default async function EventDetailPage({
             <h1 className="text-xl font-semibold">{event.event_name}</h1>
             <p className="text-muted-foreground text-sm">
               {event.customers?.name ?? "—"} ·{" "}
-              {event.trainings ? `${event.trainings.code} — ${event.trainings.name}` : "—"} ·{" "}
+              {event.trainings ? event.trainings.name : "—"} ·{" "}
               {formatDate(event.start_date)}
               {event.end_date ? ` s/d ${formatDate(event.end_date)}` : ""} · {event.cities?.name ?? "—"}
               {canViewParticipants ? ` · ${participants?.length ?? 0} peserta` : ""}
@@ -327,7 +327,7 @@ export default async function EventDetailPage({
             </div>
             <div>
               <dt className="text-muted-foreground">Program</dt>
-              <dd>{event.trainings ? `${event.trainings.code} — ${event.trainings.name}` : "—"}</dd>
+              <dd>{event.trainings ? event.trainings.name : "—"}</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Tanggal</dt>

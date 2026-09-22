@@ -2,10 +2,6 @@
 
 import { useActionState } from "react"
 import { requestPasswordReset, type ActionState } from "@/actions/auth-actions"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const initialState: ActionState = null
 
@@ -13,30 +9,51 @@ export function ForgotPasswordForm() {
   const [state, formAction, pending] = useActionState(requestPasswordReset, initialState)
 
   if (state?.ok) {
-    return (
-      <Alert className="w-full max-w-sm">
-        <AlertDescription>{state.message}</AlertDescription>
-      </Alert>
-    )
+    return <p className="auth-alert success">{state.message}</p>
   }
 
+  const emailError = state?.fieldErrors?.email?.[0]
+
   return (
-    <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
-      {state?.message && (
-        <Alert variant="destructive">
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      )}
-      <div className="grid gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
-        {state?.fieldErrors?.email && (
-          <p className="text-destructive text-sm">{state.fieldErrors.email[0]}</p>
-        )}
+    <form action={formAction} className="login-form" noValidate>
+      {state?.message && <p className="auth-alert">{state.message}</p>}
+      <div className={`field${emailError ? " has-error" : ""}`}>
+        <label htmlFor="email">Email</label>
+        <div className="input-wrap">
+          <svg
+            className="icon-leading"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2.5" />
+            <path d="m4 7 8 6 8-6" />
+          </svg>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="nama@perusahaan.com"
+            autoComplete="email"
+            required
+          />
+        </div>
+        <p className={`field-hint${emailError ? " error" : ""}`}>{emailError ?? ""}</p>
       </div>
-      <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Mengirim..." : "Kirim tautan reset"}
-      </Button>
+      <button
+        className={`btn btn-submit${pending ? " is-loading" : ""}`}
+        type="submit"
+        disabled={pending}
+      >
+        <span className="label">Kirim tautan reset</span>
+        <span className="spinner" aria-hidden="true">
+          <span className="ring" />
+        </span>
+      </button>
     </form>
   )
 }

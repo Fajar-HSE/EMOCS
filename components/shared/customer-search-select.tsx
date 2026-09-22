@@ -14,11 +14,17 @@ export function CustomerSearchSelect({
   onChange,
   options,
   placeholder = "Cari atau pilih customer...",
+  searchPlaceholder = "Ketik nama customer...",
+  emptyText = "Tidak ditemukan. Tambah di menu Customers.",
+  disabled = false,
 }: {
   value?: string | null
   onChange: (id: string) => void
   options: Option[]
   placeholder?: string
+  searchPlaceholder?: string
+  emptyText?: string
+  disabled?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -48,6 +54,7 @@ export function CustomerSearchSelect({
   }, [])
 
   function handleOpen() {
+    if (disabled) return
     setOpen(true)
     setQuery("")
     setTimeout(() => inputRef.current?.focus(), 0)
@@ -63,7 +70,10 @@ export function CustomerSearchSelect({
     <div ref={wrapperRef} className="relative">
       <div
         className={cn(
-          "flex min-h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm cursor-pointer transition hover:bg-accent hover:text-accent-foreground",
+          "flex min-h-9 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm transition",
+          disabled
+            ? "cursor-not-allowed opacity-50"
+            : "cursor-pointer hover:bg-accent hover:text-accent-foreground",
           open && "ring-2 ring-ring ring-offset-2",
         )}
         onClick={handleOpen}
@@ -98,7 +108,7 @@ export function CustomerSearchSelect({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ketik nama customer..."
+            placeholder={searchPlaceholder}
             className="w-full rounded px-2 py-1.5 text-sm outline-none"
           />
           <ul id="customer-search-list" role="listbox" className="max-h-52 overflow-auto py-1">
@@ -120,9 +130,7 @@ export function CustomerSearchSelect({
               </li>
             ))}
             {filtered.length === 0 && (
-              <li className="px-2 py-3 text-xs text-muted-foreground">
-                Tidak ditemukan. Tambah di menu <strong>Customers</strong>.
-              </li>
+              <li className="px-2 py-3 text-xs text-muted-foreground">{emptyText}</li>
             )}
           </ul>
         </div>

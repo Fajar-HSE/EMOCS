@@ -23,7 +23,7 @@ export default async function NewEventPage({
     await Promise.all([
       supabase.from("events").select("*").eq("id", draft).eq("status", "DRAFT").maybeSingle(),
       supabase.from("customers").select("id, name").is("deleted_at", null).order("name"),
-      supabase.from("trainings").select("id, name, code").eq("is_active", true).is("deleted_at", null).order("name"),
+      supabase.from("trainings").select("id, name").eq("is_active", true).is("deleted_at", null).order("name"),
       supabase.from("cities").select("id, name").is("deleted_at", null).order("name"),
     ])
 

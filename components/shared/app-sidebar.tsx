@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import type { LucideIcon } from "lucide-react"
 import {
@@ -136,16 +137,22 @@ export function AppSidebar({ roles, counts }: { roles: string[]; counts?: Sideba
   )
 
   return (
-    <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col justify-between bg-slate-900 text-slate-300 lg:flex">
-      <div>
-        <div className="flex items-center gap-3 border-b border-slate-700/40 px-6 py-6">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-fuchsia-500 to-amber-400 text-sm font-bold text-white">
-            P26
-          </span>
-          <span className="leading-tight">
-            <span className="block text-sm font-bold tracking-wide text-white">STUDIO P26</span>
-            <span className="block text-[10px] tracking-widest text-slate-400">EMOCS</span>
-          </span>
+    <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col justify-between overflow-hidden bg-slate-900 text-slate-300 lg:flex">
+      {/* Area logo + menu di-scroll mandiri: di layar pendek, menu bawah
+          (Audit Log, Admin) tetap terjangkau, bukan terpotong. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="border-b border-slate-700/40 px-6 py-5">
+          <div className="rounded-xl bg-white p-2">
+            <Image
+              src="/logo-studio-p26.png"
+              alt="Studio P26"
+              width={2160}
+              height={1214}
+              className="h-auto w-full"
+              priority
+            />
+          </div>
+          <p className="mt-2 text-center text-[10px] tracking-widest text-slate-400">EMOCS</p>
         </div>
 
         <nav className="space-y-1.5 px-3 py-5 text-sm font-medium">

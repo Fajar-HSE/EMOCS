@@ -68,7 +68,7 @@ export function EventWizard({
   draftId: string
   initialEvent: EventRow
   customers: { id: string; name: string }[]
-  trainings: { id: string; name: string; code: string }[]
+  trainings: { id: string; name: string }[]
   cities: { id: string; name: string }[]
 }) {
   const router = useRouter()
@@ -421,7 +421,7 @@ export function EventWizard({
                     onValueChange={field.onChange}
                     items={trainings.map((t) => ({
                       value: t.id,
-                      label: `${t.code} — ${t.name}`,
+                      label: t.name,
                     }))}
                   >
                     <FormControl>
@@ -431,8 +431,8 @@ export function EventWizard({
                     </FormControl>
                     <SelectContent>
                       {trainings.map((t) => (
-                        <SelectItem key={t.id} value={t.id} label={`${t.code} — ${t.name}`}>
-                          {t.code} — {t.name}
+                        <SelectItem key={t.id} value={t.id} label={t.name}>
+                          {t.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -840,7 +840,7 @@ export function EventWizard({
                 { label: "Kontak", value: contactName || "—" },
                 {
                   label: "Program",
-                  value: training ? `${training.code} — ${training.name}` : "—",
+                  value: training ? training.name : "—",
                 },
                 {
                   label: "Tipe Event",

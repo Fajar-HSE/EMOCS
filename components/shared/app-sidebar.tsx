@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CUSTOMER_NAV_ROLES, MASTER_DATA_ROLES } from "@/lib/auth/navigation"
 
 export const ROLE_LABELS: Record<string, string> = {
   SALES: "Sales",
@@ -54,11 +55,12 @@ const NAV: NavItem[] = [
   },
   { label: "Daftar Event", href: "/events", icon: CalendarDays, badge: "" },
   // Customer untuk tim Sales (create) — manajer tetap lewat Master Data.
+  // Role list terpusat di lib/auth/navigation.ts (CUSTOMER_NAV_ROLES).
   {
     label: "Customer",
     href: "/master/customers",
     icon: Users,
-    roles: ["SALES", "SALES_MANAGER"],
+    roles: CUSTOMER_NAV_ROLES,
     badge: "",
   },
   {
@@ -93,7 +95,8 @@ const NAV: NavItem[] = [
     label: "Master Data",
     href: "/master",
     icon: Database,
-    roles: ["OPERATIONS_MANAGER", "FINANCE", "ADMIN", "MANAGEMENT"],
+    // Role list terpusat di lib/auth/navigation.ts (MASTER_DATA_ROLES).
+    roles: MASTER_DATA_ROLES,
     badge: "",
   },
   {

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { requireAuth } from "@/lib/auth/session"
 import { hasAnyRole, hasRole, type Role } from "@/lib/auth/roles"
+import { MASTER_DATA_ROLES } from "@/lib/auth/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { signOut } from "@/actions/auth-actions"
 import { Button } from "@/components/ui/button"
@@ -158,12 +159,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
               Audit Log
             </Link>
           )}
-          {hasAnyRole(ctx.roles, ["OPERATIONS_MANAGER", "FINANCE", "ADMIN", "MANAGEMENT"]) && (
+          {hasAnyRole(ctx.roles, MASTER_DATA_ROLES) && (
             <Link href="/master" className="text-muted-foreground whitespace-nowrap">
               Master Data
             </Link>
           )}
-          {!hasAnyRole(ctx.roles, ["OPERATIONS_MANAGER", "FINANCE", "ADMIN", "MANAGEMENT"]) && (
+          {!hasAnyRole(ctx.roles, MASTER_DATA_ROLES) && (
             <Link href="/master/customers" className="text-muted-foreground whitespace-nowrap">
               Customers
             </Link>

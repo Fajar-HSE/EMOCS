@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local-only artifacts (never commit: dev logs, editor state, secrets-adjacent)
+cookies.txt
+dev-*.log
+.claude/
+
+# internal product docs (kept local; the GitHub repo is public)
+PRD EMOCS — Product Requirements Document.md
+PRD EMOCS — Lampiran A - Notifikasi, Progress & Keputusan Model.md

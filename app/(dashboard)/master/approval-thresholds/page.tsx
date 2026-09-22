@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
-import { requireAuth } from "@/lib/auth/session"
+import { requireRole } from "@/lib/auth/session"
 import { hasAnyRole } from "@/lib/auth/roles"
+import { APPROVAL_THRESHOLD_READ_ROLES } from "@/lib/auth/navigation"
 import { ApprovalThresholdDialog } from "./approval-threshold-dialog"
 import { ApprovalThresholdRowActions } from "./approval-threshold-row-actions"
 import { Badge } from "@/components/ui/badge"
@@ -11,7 +12,8 @@ function currency(v: number | null) {
 }
 
 export default async function ApprovalThresholdsPage() {
-  const ctx = await requireAuth()
+  // Read separation (mirrors 0040 RLS SELECT): Sales/Operations never reach this page.
+  const ctx = await requireRole(...APPROVAL_THRESHOLD_READ_ROLES)
   const canManage = hasAnyRole(ctx.roles, ["FINANCE", "ADMIN"])
 
   const supabase = await createClient()

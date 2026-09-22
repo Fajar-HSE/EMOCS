@@ -1,13 +1,15 @@
 import { createClient } from "@/lib/supabase/server"
-import { requireAuth } from "@/lib/auth/session"
+import { requireRole } from "@/lib/auth/session"
 import { hasAnyRole } from "@/lib/auth/roles"
+import { COST_CATEGORY_READ_ROLES } from "@/lib/auth/navigation"
 import { CostCategoryDialog } from "./cost-category-dialog"
 import { CostCategoryRowActions } from "./cost-category-row-actions"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default async function CostCategoriesPage() {
-  const ctx = await requireAuth()
+  // Read separation (mirrors 0040 RLS SELECT): Sales never reaches this page.
+  const ctx = await requireRole(...COST_CATEGORY_READ_ROLES)
   const canManage = hasAnyRole(ctx.roles, ["FINANCE", "ADMIN"])
 
   const supabase = await createClient()

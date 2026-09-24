@@ -13,18 +13,23 @@ export default async function AnalyticsPage() {
 
   const supabase = await createClient()
 
-  // Fetch training master data for filter
-  const { data: trainings } = await supabase
-    .from("trainings")
-    .select("id, name, code")
-    .is("deleted_at", null)
-    .order("name")
+  // 5 independent reads in ONE round-trip batch — sequential awaits here
+  // used to cost ~5x RTT on every visit to this menu.
+  const [trainingsRes, estimatorRes, customerProfRes, trainingProfRes, forecastRes] =
+    await Promise.all([
+      supabase
+        .from("trainings")
+        .select("id, name, code")
+        .is("deleted_at", null)
+        .order("name"),
+      // Initial estimator call (unfiltered)
+      getCostEstimator(),
+      getCustomerProfitability(),
+      getTrainingProfitability(),
+      getFinancialForecasting(),
+    ])
 
-  // Initial estimator call (unfiltered)
-  const estimatorRes = await getCostEstimator()
-  const customerProfRes = await getCustomerProfitability()
-  const trainingProfRes = await getTrainingProfitability()
-  const forecastRes = await getFinancialForecasting()
+  const { data: trainings } = trainingsRes
 
   return (
     <BiDashboard

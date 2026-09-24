@@ -26,29 +26,40 @@ export default async function FinancialsPage() {
 
   const supabase = await createClient()
 
-  const { data: pendingExpenses } = await supabase
-    .from("expenses")
-    .select(
-      "id, description, amount, status, required_approver_role, submitted_at, submitted_by, event_id, cost_categories(name), submitted_by_profile:profiles!expenses_submitted_by_fkey(full_name), events(event_code, event_name, status)"
-    )
-    .in("status", ["SUBMITTED", "UNDER_REVIEW"])
-    .order("submitted_at", { ascending: true })
+  // 2 independent reads in ONE round-trip batch.
+  const [pendingExpensesRes, closingEventsRes] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select(
+        "id, description, amount, status, required_approver_role, submitted_at, submitted_by, event_id, cost_categories(name), submitted_by_profile:profiles!expenses_submitted_by_fkey(full_name), events(event_code, event_name, status)"
+      )
+      .in("status", ["SUBMITTED", "UNDER_REVIEW"])
+      .order("submitted_at", { ascending: true }),
+    supabase
+      .from("events")
+      .select("id, event_code, event_name, start_date, customers(name)")
+      .is("deleted_at", null)
+      .eq("status", "FINANCIAL_CLOSING")
+      .order("start_date", { ascending: true }),
+  ])
 
-  const { data: closingEvents } = await supabase
-    .from("events")
-    .select("id, event_code, event_name, start_date, customers(name)")
-    .is("deleted_at", null)
-    .eq("status", "FINANCIAL_CLOSING")
-    .order("start_date", { ascending: true })
+  const { data: pendingExpenses } = pendingExpensesRes
+  const { data: closingEvents } = closingEventsRes
 
-  const closingWithSnapshot: ClosingEventRow[] = []
-  for (const ev of closingEvents ?? []) {
-    const [costs, revenue] = await Promise.allSettled([
-      getEventCosts(ev.id),
-      getEventRevenue(ev.id),
-    ])
+  // Snapshot RPCs for ALL closing events in one batch — the old per-event
+  // sequential loop cost 2x RTT per event on every visit. Inner
+  // allSettled preserves per-RPC independence (one failing RPC still
+  // yields the other's data); outer Promise.all runs events concurrently.
+  const snapshots = await Promise.all(
+    (closingEvents ?? []).map((ev) =>
+      Promise.allSettled([getEventCosts(ev.id), getEventRevenue(ev.id)]),
+    ),
+  )
+
+  const closingWithSnapshot: ClosingEventRow[] = (closingEvents ?? []).map((ev, i) => {
+    const [costs, revenue] = snapshots[i]
     const pendingCount = (pendingExpenses ?? []).filter((e) => e.event_id === ev.id).length
-    closingWithSnapshot.push({
+    return {
       id: ev.id,
       event_code: ev.event_code,
       event_name: ev.event_name,
@@ -58,8 +69,8 @@ export default async function FinancialsPage() {
       actual_cost:
         costs.status === "fulfilled" && costs.value.ok ? costs.value.data.actual_cost : null,
       revenue: revenue.status === "fulfilled" && revenue.value.ok ? revenue.value.data : null,
-    })
-  }
+    }
+  })
 
   const expenseRows = (pendingExpenses ?? []) as ExpenseRow[]
 

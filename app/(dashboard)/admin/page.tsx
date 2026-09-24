@@ -19,29 +19,31 @@ export default async function AdminPage() {
   await requireRole("ADMIN")
   const supabase = await createClient()
 
-  const { data: users, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, is_active, team_id, team:teams!profiles_team_id_fkey(name), user_roles!user_roles_user_id_fkey(roles(name))")
-    .order("full_name")
+  // 4 independent reads in ONE round-trip batch.
+  const [usersRes, teamsRes, activeUsersRes, pendingInvitesRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, is_active, team_id, team:teams!profiles_team_id_fkey(name), user_roles!user_roles_user_id_fkey(roles(name))")
+      .order("full_name"),
+    supabase.from("teams").select("id, name").is("deleted_at", null).order("name"),
+    supabase.from("profiles").select("team_id").eq("is_active", true),
+    supabase
+      .from("invited_emails")
+      .select("email, full_name, roles, invited_at")
+      .is("consumed_at", null)
+      .order("invited_at", { ascending: false }),
+  ])
 
-  const { data: teams } = await supabase
-    .from("teams")
-    .select("id, name")
-    .is("deleted_at", null)
-    .order("name")
+  const { data: users, error } = usersRes
+  const { data: teams } = teamsRes
+  const { data: activeUsers } = activeUsersRes
+  const { data: pendingInvites } = pendingInvitesRes
 
-  const { data: activeUsers } = await supabase.from("profiles").select("team_id").eq("is_active", true)
   const memberCounts = new Map<string, number>()
   for (const u of activeUsers ?? []) {
     if (u.team_id) memberCounts.set(u.team_id, (memberCounts.get(u.team_id) ?? 0) + 1)
   }
   const teamsWithCounts = (teams ?? []).map((t) => ({ ...t, member_count: memberCounts.get(t.id) ?? 0 }))
-
-  const { data: pendingInvites } = await supabase
-    .from("invited_emails")
-    .select("email, full_name, roles, invited_at")
-    .is("consumed_at", null)
-    .order("invited_at", { ascending: false })
 
   return (
     <div className="flex flex-col gap-8 p-6">
